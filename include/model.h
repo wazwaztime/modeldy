@@ -5,6 +5,10 @@
 #ifndef MODELDY_INCLUDE_MODEL_H_
 #define MODELDY_INCLUDE_MODEL_H_
 
+#include <modeldy/include/node.h>
+
+#include <vector>
+
 namespace modeldy {
 
 /*! \brief model class */
@@ -16,6 +20,11 @@ class Model {
 
   void Train();
   void Predict();
+
+ private:
+  std::vector<std::shared_ptr<Node<T>>> nodes_;
+  
+
 };
 
 } // namespace modeldy
