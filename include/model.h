@@ -24,6 +24,7 @@ class Model {
  public:
   ~Model() = default;
   
+  /*! \brief Create a new data node */
   void newDataNode(const std::string& name,
                    const std::vector<size_t>& shape,
                    bool requires_grad = false,
@@ -48,6 +49,7 @@ class Model {
     node_map_[name] = node;
   }
 
+  /*! \brief Create a new compute node */
   void newComputeNode(const std::string& class_name, 
                       const std::string& name, 
                       const std::vector<std::string>& input_names,
@@ -92,6 +94,7 @@ class Model {
     node_map_[name] = node;
   }
 
+  /*! \brief get data pointer of a data node by name */
   const T *data(const std::string& name) const {
     auto it = node_map_.find(name);
     if (it == node_map_.end()) {
@@ -103,6 +106,7 @@ class Model {
     return std::dynamic_pointer_cast<DataNode<T>>(it->second)->data();
   }
 
+  /*! \brief get gradient pointer of a data node by name */
   const T *grad(const std::string& name) const {
     auto it = node_map_.find(name);
     if (it == node_map_.end()) {
@@ -117,6 +121,7 @@ class Model {
     return std::dynamic_pointer_cast<DataNode<T>>(it->second)->grad();
   }
 
+  /*! \brief set data of a data node by name */
   void setData(const std::string& name, const std::vector<T>& data) {
     auto it = node_map_.find(name);
     if (it == node_map_.end()) {
@@ -146,6 +151,7 @@ class Model {
     }
   }
 
+  /*! \brief compile the model (topological sort) */
   void compile() {
     if (compiled_) {
       return;
@@ -155,6 +161,7 @@ class Model {
     compiled_ = true;
   }
 
+  /*! \brief perform prediction (forward pass) */
   void predict() {
     compile();
     for (const auto& node : compute_nodes_) {
@@ -162,6 +169,7 @@ class Model {
     }
   }
 
+  /*! \brief perform training (backward pass) */
   void backward() {
     compile();
     for (auto it = compute_nodes_.rbegin(); it != compute_nodes_.rend(); ++it) {
