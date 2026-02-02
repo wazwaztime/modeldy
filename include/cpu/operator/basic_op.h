@@ -6,40 +6,44 @@
 #define MODELDY_INCLUDE_CPU_OPERATOR_BASIC_OP_H_
 
 #include <modeldy/include/cpu/node_cpu.h>
+#include <cassert>
 
 namespace modeldy {
 
 namespace cpu {
 
 template <typename T>
-class CpuAdd : public CpuComputeNode<T> {
+class cpuAdd : public cpuComputeNode<T> {
  public:
-  explicit CpuAdd(const std::vector<NodePtr<T>>& input,
+  explicit cpuAdd(const std::vector<NodePtr<T>>& input,
                    const std::vector<NodePtr<T>>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>(input, output, name) {
+      : cpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
-  ~CpuAdd() override = default;
+  ~cpuAdd() override = default;
 
   /*! \brief validate the shape of the input and output*/
   void validate_shape() const override {
     assert(this->inputs().size() == 2 && "AddNode requires exactly two inputs");
-    const auto& shape1 = this->inputs()[0]->shape();
-    const auto& shape2 = this->inputs()[1]->shape();
+    const auto& shape1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0])->shape();
+    const auto& shape2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1])->shape();
     assert(shape1 == shape2 && "Input shapes must match for addition");
-    const auto& output_shape = this->outputs()[0]->shape();
+    const auto& output_shape = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0])->shape();
     assert(shape1 == output_shape && "Output shape must match input shapes");
   }
 
   /*! \brief forward computation */
   void forward() override {
-    T* input1_data = this->inputs()[0]->data();
-    T* input2_data = this->inputs()[1]->data();
-    T* output_data = this->outputs()[0]->data();
+    auto input1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0]);
+    auto input2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1]);
+    auto output = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0]);
+    T* input1_data = input1->data();
+    T* input2_data = input2->data();
+    T* output_data = output->data();
     size_t total_size = 1;
-    for (const auto& dim : this->outputs()[0]->shape()) {
+    for (const auto& dim : output->shape()) {
       total_size *= dim;
     }
     for (size_t i = 0; i < total_size; ++i) {
@@ -49,11 +53,13 @@ class CpuAdd : public CpuComputeNode<T> {
 
   /*! \brief backward computation */
   void backward() override {
+    auto output = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0]);
     if (this->inputs()[0]->requires_grad()) {
-      T* grad_output = this->outputs()[0]->grad();
-      T* grad_input1 = this->inputs()[0]->grad();
+      auto input1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0]);
+      T* grad_output = output->grad();
+      T* grad_input1 = input1->grad();
       size_t total_size = 1;
-      for (const auto& dim : this->outputs()[0]->shape()) {
+      for (const auto& dim : output->shape()) {
         total_size *= dim;
       }
       for (size_t i = 0; i < total_size; ++i) {
@@ -61,10 +67,11 @@ class CpuAdd : public CpuComputeNode<T> {
       }
     }
     if (this->inputs()[1]->requires_grad()) {
-      T* grad_output = this->outputs()[0]->grad();
-      T* grad_input2 = this->inputs()[1]->grad();
+      auto input2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1]);
+      T* grad_output = output->grad();
+      T* grad_input2 = input2->grad();
       size_t total_size = 1;
-      for (const auto& dim : this->outputs()[0]->shape()) {
+      for (const auto& dim : output->shape()) {
         total_size *= dim;
       }
       for (size_t i = 0; i < total_size; ++i) {
@@ -74,39 +81,38 @@ class CpuAdd : public CpuComputeNode<T> {
   }
 };
 
-} // namespace cpu
-
-namespace cpu {
-
 template <typename T>
-class CpuMul : public CpuComputeNode<T> {
+class cpuMul : public cpuComputeNode<T> {
  public:
-  explicit CpuMul(const std::vector<NodePtr<T>>& input,
+  explicit cpuMul(const std::vector<NodePtr<T>>& input,
                    const std::vector<NodePtr<T>>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>(input, output, name) {
+      : cpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
-  ~CpuMul() override = default;
+  ~cpuMul() override = default;
 
   /*! \brief validate the shape of the input and output*/
   void validate_shape() const override {
     assert(this->inputs().size() == 2 && "MulNode requires exactly two inputs");
-    const auto& shape1 = this->inputs()[0]->shape();
-    const auto& shape2 = this->inputs()[1]->shape();
+    const auto& shape1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0])->shape();
+    const auto& shape2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1])->shape();
     assert(shape1 == shape2 && "Input shapes must match for multiplication");
-    const auto& output_shape = this->outputs()[0]->shape();
+    const auto& output_shape = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0])->shape();
     assert(shape1 == output_shape && "Output shape must match input shapes");
   }
 
   /*! \brief forward computation */
   void forward() override {
-    T* input1_data = this->inputs()[0]->data();
-    T* input2_data = this->inputs()[1]->data();
-    T* output_data = this->outputs()[0]->data();
+    auto input1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0]);
+    auto input2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1]);
+    auto output = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0]);
+    T* input1_data = input1->data();
+    T* input2_data = input2->data();
+    T* output_data = output->data();
     size_t total_size = 1;
-    for (const auto& dim : this->outputs()[0]->shape()) {
+    for (const auto& dim : output->shape()) {
       total_size *= dim;
     }
     for (size_t i = 0; i < total_size; ++i) {
@@ -116,12 +122,15 @@ class CpuMul : public CpuComputeNode<T> {
 
   /*! \brief backward computation */
   void backward() override {
+    auto output = std::dynamic_pointer_cast<cpuDataNode<T>>(this->outputs()[0]);
     if (this->inputs()[0]->requires_grad()) {
-      T* input2_data = this->inputs()[1]->data();
-      T* grad_output = this->outputs()[0]->grad();
-      T* grad_input1 = this->inputs()[0]->grad();
+      auto input1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0]);
+      auto input2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1]);
+      T* input2_data = input2->data();
+      T* grad_output = output->grad();
+      T* grad_input1 = input1->grad();
       size_t total_size = 1;
-      for (const auto& dim : this->outputs()[0]->shape()) {
+      for (const auto& dim : output->shape()) {
         total_size *= dim;
       }
       for (size_t i = 0; i < total_size; ++i) {
@@ -129,11 +138,13 @@ class CpuMul : public CpuComputeNode<T> {
       }
     }
     if (this->inputs()[1]->requires_grad()) {
-      T* input1_data = this->inputs()[0]->data();
-      T* grad_output = this->outputs()[0]->grad();
-      T* grad_input2 = this->inputs()[1]->grad();
+      auto input1 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[0]);
+      auto input2 = std::dynamic_pointer_cast<cpuDataNode<T>>(this->inputs()[1]);
+      T* input1_data = input1->data();
+      T* grad_output = output->grad();
+      T* grad_input2 = input2->grad();
       size_t total_size = 1;
-      for (const auto& dim : this->outputs()[0]->shape()) {
+      for (const auto& dim : output->shape()) {
         total_size *= dim;
       }
       for (size_t i = 0; i < total_size; ++i) {

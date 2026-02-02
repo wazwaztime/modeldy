@@ -8,8 +8,11 @@
 #include <modeldy/include/node.h>
 
 #include <vector>
+#include <cassert>
 
 namespace modeldy {
+namespace cpu {
+
 /*! \brief CPU-specific node implementations */
 template <typename T>
 class cpuDataNode : public DataNode<T> {
@@ -52,8 +55,6 @@ class cpuDataNode : public DataNode<T> {
   std::vector<T> grad_;
 };
 
-namespace cpu {
-
 template <typename T>
 class cpuComputeNode : public ComputeNode<T> {
  public:
@@ -62,12 +63,12 @@ class cpuComputeNode : public ComputeNode<T> {
                           const std::string& name = "")
       : ComputeNode<T>(inputs, outputs, name) {
     // Assert that all inputs are cpuDataNode
-    for (const auto& input : inputs_) {
+    for (const auto& input : this->inputs()) {
       assert(std::dynamic_pointer_cast<cpuDataNode<T>>(input) != nullptr && 
              "cpuComputeNode inputs must be cpuDataNode instances");
     }
     // Assert that all outputs are cpuDataNode
-    for (const auto& output : outputs_) {
+    for (const auto& output : this->outputs()) {
       assert(std::dynamic_pointer_cast<cpuDataNode<T>>(output) != nullptr && 
              "cpuComputeNode outputs must be cpuDataNode instances");
     }
@@ -77,7 +78,6 @@ class cpuComputeNode : public ComputeNode<T> {
 };
 
 } // namespace cpu
-
 } // namespace modeldy
 
 #endif // MODELDY_INCLUDE_CPU_NODE_CPU_H_

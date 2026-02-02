@@ -70,8 +70,8 @@ class OperatorRegistry {
 /*! \brief Macro for registering operators */
 #define REGISTER_OPERATOR(T, ClassName, DeviceType) \
   namespace { \
-    struct ClassName##DeviceType##Registrar { \
-      ClassName##DeviceType##Registrar() { \
+    struct ClassName##_##DeviceType##_##T##_Registrar { \
+      ClassName##_##DeviceType##_##T##_Registrar() { \
         modeldy::OperatorRegistry<T>::getInstance().registerOperator( \
             #ClassName, \
             #DeviceType, \
@@ -83,7 +83,7 @@ class OperatorRegistry {
             }); \
       } \
     }; \
-    static ClassName##DeviceType##Registrar g_##ClassName##DeviceType##Registrar; \
+    static ClassName##_##DeviceType##_##T##_Registrar g_##ClassName##_##DeviceType##_##T##_Registrar; \
   }
 
 } // namespace modeldy

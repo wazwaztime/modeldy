@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <string>
+#include <cassert>
 
 namespace modeldy {
 
@@ -109,29 +110,26 @@ class DataNode : public Node<T> {
 template <typename T>
 class ComputeNode : public Node<T> {
  public:
+  template <typename U>
+  friend class Model;
+
   explicit ComputeNode(const std::vector<NodePtr<T>>& inputs,
                        const std::vector<NodePtr<T>>& outputs,
                        const std::string& name = "") 
    : Node<T>(inputs, outputs, name) {
     // Assert that all inputs are DataNode
-    for (const auto& input : inputs_) {
+    for (const auto& input : this->inputs_) {
       assert(std::dynamic_pointer_cast<DataNode<T>>(input) != nullptr && 
              "ComputeNode inputs must be DataNode instances");
     }
     // Assert that all outputs are DataNode
-    for (const auto& output : outputs_) {
+    for (const auto& output : this->outputs_) {
       assert(std::dynamic_pointer_cast<DataNode<T>>(output) != nullptr && 
              "ComputeNode outputs must be DataNode instances");
     }
-    for (const auto& input : inputs_) {
-      input->add_output(this->shared_from_this());
-    }
-    for (const auto& output : outputs_) {
-      output->add_input(this->shared_from_this());
-    }
     // Determine requires_grad based on inputs
-    requires_grad_ = std::any_of(
-      inputs_.begin(), inputs_.end(),
+    this->requires_grad_ = std::any_of(
+      this->inputs_.begin(), this->inputs_.end(),
       [](const NodePtr<T>& node) { return node->requires_grad(); });
   }
 
@@ -145,6 +143,17 @@ class ComputeNode : public Node<T> {
 
   /*! \brief backward computation */
   virtual void backward() = 0;
+
+ private:
+  /*! \brief Initialize connections after construction */
+  void initialize_connections() {
+    for (const auto& input : this->inputs_) {
+      input->add_output(this->shared_from_this());
+    }
+    for (const auto& output : this->outputs_) {
+      output->add_input(this->shared_from_this());
+    }
+  }
   
 };
 

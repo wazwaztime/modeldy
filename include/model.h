@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <queue>
 
 #include <modeldy/include/operator_registry.h>
 #include <modeldy/include/cpu/operator.h>
@@ -27,16 +28,17 @@ class Model {
                    const std::vector<size_t>& shape,
                    bool requires_grad = false,
                    const std::string& device = "cpu") {
+    compiled_ = false;
     if (node_map_.find(name) != node_map_.end()) {
       throw std::runtime_error("Node with name " + name + " already exists.");
     }
     std::shared_ptr<Node<T>> node;
     if (device == "cpu") {
-      node = std::make_shared<modeldy::cpu::cpuDataNode<T>>(shape, requires_grad, name);
+      node = std::make_shared<cpu::cpuDataNode<T>>(shape, requires_grad, name);
     }
 #ifdef USE_CUDA
     else if (device == "cuda") {
-      node = std::make_shared<modeldy::cuda::cudaDataNode<T>>(shape, requires_grad, name);
+      node = std::make_shared<cuda::cudaDataNode<T>>(shape, requires_grad, name);
     }
 #endif // USE_CUDA
     else {
@@ -52,6 +54,7 @@ class Model {
                       const std::vector<std::string>& output_names,
                       const std::string& device = "cpu"
                     ) {
+    compiled_ = false;
     if (node_map_.find(name) != node_map_.end()) {
       throw std::runtime_error("Node with name " + name + " already exists.");
     }
@@ -80,15 +83,175 @@ class Model {
     auto node = OperatorRegistry<T>::getInstance().createOperator(
         class_name, device, inputs, outputs, name);
     
+    // Initialize connections after the node is managed by shared_ptr
+    if (auto compute_node = std::dynamic_pointer_cast<ComputeNode<T>>(node)) {
+      compute_node->initialize_connections();
+    }
+    
     nodes_.push_back(node);
     node_map_[name] = node;
   }
 
-  void Predict();
+  const T *data(const std::string& name) const {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    if (std::dynamic_pointer_cast<DataNode<T>>(it->second) == nullptr) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    return std::dynamic_pointer_cast<DataNode<T>>(it->second)->data();
+  }
+
+  const T *grad(const std::string& name) const {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    if (std::dynamic_pointer_cast<DataNode<T>>(it->second) == nullptr) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    if (!it->second->requires_grad()) {
+      throw std::runtime_error("Node with name " + name + " does not require gradient.");
+    }
+    return std::dynamic_pointer_cast<DataNode<T>>(it->second)->grad();
+  }
+
+  void setData(const std::string& name, const std::vector<T>& data) {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    if (std::dynamic_pointer_cast<DataNode<T>>(it->second) == nullptr) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second);
+    size_t total_size = 1;
+    for (const auto& dim : data_node->shape()) {
+      total_size *= dim;
+    }
+    if (data.size() != total_size) {
+      throw std::runtime_error("Data size does not match node shape.");
+    }
+    if (auto cpu_node = std::dynamic_pointer_cast<cpu::cpuDataNode<T>>(data_node)) {
+      cpu_node->copy_from(data);
+    }
+#ifdef USE_CUDA
+    else if (auto cuda_node = std::dynamic_pointer_cast<cuda::cudaDataNode<T>>(data_node)) {
+      cuda_node->copy_from(data);
+    }
+#endif // USE_CUDA
+    else {
+      throw std::runtime_error("Unsupported device type for node " + name);
+    }
+  }
+
+  void compile() {
+    if (compiled_) {
+      return;
+    }
+    checkDAG();
+    compute_nodes_ = std::move(topologicalSort());
+    compiled_ = true;
+  }
+
+  void predict() {
+    compile();
+    for (const auto& node : compute_nodes_) {
+      node->forward();
+    }
+  }
+
+  void backward() {
+    compile();
+    for (auto it = compute_nodes_.rbegin(); it != compute_nodes_.rend(); ++it) {
+      (*it)->backward();
+    }
+  }
 
  private:
   std::vector<std::shared_ptr<Node<T>>> nodes_;
   std::unordered_map<std::string, std::shared_ptr<Node<T>>> node_map_;
+  std::vector<std::shared_ptr<ComputeNode<T>>> compute_nodes_;
+  bool compiled_ = false;
+
+  /*! \brief topological sort of compute nodes */
+  std::vector<std::shared_ptr<ComputeNode<T>>> topologicalSort() {
+    std::vector<std::shared_ptr<ComputeNode<T>>> sorted_nodes;
+    std::unordered_map<std::shared_ptr<Node<T>>, int> in_degree;
+    std::queue<std::shared_ptr<Node<T>>> zero_in_degree_queue;
+
+    // Initialize in-degrees
+    for (const auto& node : nodes_) {
+      in_degree[node] = 0;
+    }
+    for (const auto& node : nodes_) {
+      for (const auto& output : node->outputs()) {
+        in_degree[output]++;
+      }
+    }
+
+    // Enqueue nodes with zero in-degree
+    for (const auto& pair : in_degree) {
+      if (pair.second == 0) {
+        zero_in_degree_queue.push(pair.first);
+      }
+    }
+
+    // Perform topological sort
+    while (!zero_in_degree_queue.empty()) {
+      auto current_node = zero_in_degree_queue.front();
+      zero_in_degree_queue.pop();
+
+      if (auto compute_node = std::dynamic_pointer_cast<ComputeNode<T>>(current_node)) {
+        sorted_nodes.push_back(compute_node);
+      }
+
+      for (const auto& output : current_node->outputs()) {
+        in_degree[output]--;
+        if (in_degree[output] == 0) {
+          zero_in_degree_queue.push(output);
+        }
+      }
+    }
+
+    return sorted_nodes;
+  }
+
+  /*! \brief check if the graph is a Directed Acyclic Graph (DAG) */
+  void checkDAG() {
+    std::unordered_map<std::shared_ptr<Node<T>>, int> in_degree;
+    for (const auto& node : nodes_) {
+      in_degree[node] = 0;
+    }
+    for (const auto& node : nodes_) {
+      for (const auto& output : node->outputs()) {
+        in_degree[output]++;
+      }
+    }
+    size_t visited_count = 0;
+    std::queue<std::shared_ptr<Node<T>>> zero_in_degree_queue;
+    for (const auto& pair : in_degree) {
+      if (pair.second == 0) {
+        zero_in_degree_queue.push(pair.first);
+      }
+    }
+    while (!zero_in_degree_queue.empty()) {
+      auto current_node = zero_in_degree_queue.front();
+      zero_in_degree_queue.pop();
+      visited_count++;
+      for (const auto& output : current_node->outputs()) {
+        in_degree[output]--;
+        if (in_degree[output] == 0) {
+          zero_in_degree_queue.push(output);
+        }
+      }
+    }
+    if (visited_count != nodes_.size()) {
+      throw std::runtime_error("The computation graph is not a Directed Acyclic Graph (DAG).");
+    }
+  }
+
 };
 
 } // namespace modeldy
