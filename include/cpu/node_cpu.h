@@ -52,6 +52,32 @@ class CpuDataNode : public DataNode<T> {
   std::vector<T> grad_;
 };
 
+namespace cpu {
+
+template <typename T>
+class CpuComputeNode : public ComputeNode<T> {
+ public:
+  explicit CpuComputeNode(const std::vector<NodePtr<T>>& inputs,
+                          const std::vector<NodePtr<T>>& outputs,
+                          const std::string& name = "")
+      : ComputeNode<T>(inputs, outputs, name) {
+    // Assert that all inputs are CpuDataNode
+    for (const auto& input : inputs_) {
+      assert(std::dynamic_pointer_cast<CpuDataNode<T>>(input) != nullptr && 
+             "CpuComputeNode inputs must be CpuDataNode instances");
+    }
+    // Assert that all outputs are CpuDataNode
+    for (const auto& output : outputs_) {
+      assert(std::dynamic_pointer_cast<CpuDataNode<T>>(output) != nullptr && 
+             "CpuComputeNode outputs must be CpuDataNode instances");
+    }
+  }
+
+  ~CpuComputeNode() override = default;
+};
+
+} // namespace cpu
+
 } // namespace modeldy
 
 #endif // MODELDY_INCLUDE_CPU_NODE_CPU_H_
