@@ -24,10 +24,10 @@ class HostToDeviceNode : public ComputeNode<T> {
       assert(std::dynamic_pointer_cast<CpuDataNode<T>>(input) != nullptr && 
              "HostToDeviceNode inputs must be CpuDataNode instances");
     }
-    // Assert that all outputs are CudaDataNode
+    // Assert that all outputs are cudaDataNode
     for (const auto& output : outputs_) {
-      assert(std::dynamic_pointer_cast<CudaDataNode<T>>(output) != nullptr && 
-             "HostToDeviceNode outputs must be CudaDataNode instances");
+      assert(std::dynamic_pointer_cast<cudaDataNode<T>>(output) != nullptr && 
+             "HostToDeviceNode outputs must be cudaDataNode instances");
     }
     validate_shape();
   }
@@ -45,7 +45,7 @@ class HostToDeviceNode : public ComputeNode<T> {
   /*! \brief forward computation */
   void forward() override {
     auto input_node = std::dynamic_pointer_cast<CpuDataNode<T>>(this->inputs_[0]);
-    auto output_node = std::dynamic_pointer_cast<CudaDataNode<T>>(this->outputs_[0]);
+    auto output_node = std::dynamic_pointer_cast<cudaDataNode<T>>(this->outputs_[0]);
     size_t total_size = 1;
     for (const auto& dim : input_node->shape()) {
       total_size *= dim;
@@ -58,7 +58,7 @@ class HostToDeviceNode : public ComputeNode<T> {
   void backward() override {
     if (this -> requires_grad()) {
       auto input_node = std::dynamic_pointer_cast<CpuDataNode<T>>(this->inputs_[0]);
-      auto output_node = std::dynamic_pointer_cast<CudaDataNode<T>>(this->outputs_[0]);
+      auto output_node = std::dynamic_pointer_cast<cudaDataNode<T>>(this->outputs_[0]);
       size_t total_size = 1;
       for (const auto& dim : input_node->shape()) {
         total_size *= dim;
@@ -78,10 +78,10 @@ class DeviceToHostNode : public ComputeNode<T> {
                             const std::vector<NodePtr<T>>& outputs,
                             const std::string& name = "")
     : ComputeNode<T>(inputs, outputs, name) {
-    // Assert that all inputs are CudaDataNode
+    // Assert that all inputs are cudaDataNode
     for (const auto& input : inputs_) {
-      assert(std::dynamic_pointer_cast<CudaDataNode<T>>(input) != nullptr && 
-             "DeviceToHostNode inputs must be CudaDataNode instances");
+      assert(std::dynamic_pointer_cast<cudaDataNode<T>>(input) != nullptr && 
+             "DeviceToHostNode inputs must be cudaDataNode instances");
     }
     // Assert that all outputs are CpuDataNode
     for (const auto& output : outputs_) {
@@ -103,7 +103,7 @@ class DeviceToHostNode : public ComputeNode<T> {
 
   /*! \brief forward computation */
   void forward() override {
-    auto input_node = std::dynamic_pointer_cast<CudaDataNode<T>>(this->inputs_[0]);
+    auto input_node = std::dynamic_pointer_cast<cudaDataNode<T>>(this->inputs_[0]);
     auto output_node = std::dynamic_pointer_cast<CpuDataNode<T>>(this->outputs_[0]);
     size_t total_size = 1;
     for (const auto& dim : input_node->shape()) {
@@ -116,7 +116,7 @@ class DeviceToHostNode : public ComputeNode<T> {
   /*! \brief backward computation */
   void backward() override {
     if (this -> requires_grad()) {
-      auto input_node = std::dynamic_pointer_cast<CudaDataNode<T>>(this->inputs_[0]);
+      auto input_node = std::dynamic_pointer_cast<cudaDataNode<T>>(this->inputs_[0]);
       auto output_node = std::dynamic_pointer_cast<CpuDataNode<T>>(this->outputs_[0]);
       size_t total_size = 1;
       for (const auto& dim : input_node->shape()) {

@@ -12,9 +12,9 @@
 namespace modeldy {
 /*! \brief CPU-specific node implementations */
 template <typename T>
-class CpuDataNode : public DataNode<T> {
+class cpuDataNode : public DataNode<T> {
  public:
-  explicit CpuDataNode(const std::vector<size_t>& shape,
+  explicit cpuDataNode(const std::vector<size_t>& shape,
                        bool requires_grad = false,
                        const std::string& name = "")
       : DataNode<T>(shape, requires_grad, name) {
@@ -29,7 +29,7 @@ class CpuDataNode : public DataNode<T> {
     }
   }
 
-  ~CpuDataNode() override = default;
+  ~cpuDataNode() override = default;
 
   /*! \brief get the underlying data pointer */
   T* data() {
@@ -55,25 +55,25 @@ class CpuDataNode : public DataNode<T> {
 namespace cpu {
 
 template <typename T>
-class CpuComputeNode : public ComputeNode<T> {
+class cpuComputeNode : public ComputeNode<T> {
  public:
-  explicit CpuComputeNode(const std::vector<NodePtr<T>>& inputs,
+  explicit cpuComputeNode(const std::vector<NodePtr<T>>& inputs,
                           const std::vector<NodePtr<T>>& outputs,
                           const std::string& name = "")
       : ComputeNode<T>(inputs, outputs, name) {
-    // Assert that all inputs are CpuDataNode
+    // Assert that all inputs are cpuDataNode
     for (const auto& input : inputs_) {
-      assert(std::dynamic_pointer_cast<CpuDataNode<T>>(input) != nullptr && 
-             "CpuComputeNode inputs must be CpuDataNode instances");
+      assert(std::dynamic_pointer_cast<cpuDataNode<T>>(input) != nullptr && 
+             "cpuComputeNode inputs must be cpuDataNode instances");
     }
-    // Assert that all outputs are CpuDataNode
+    // Assert that all outputs are cpuDataNode
     for (const auto& output : outputs_) {
-      assert(std::dynamic_pointer_cast<CpuDataNode<T>>(output) != nullptr && 
-             "CpuComputeNode outputs must be CpuDataNode instances");
+      assert(std::dynamic_pointer_cast<cpuDataNode<T>>(output) != nullptr && 
+             "cpuComputeNode outputs must be cpuDataNode instances");
     }
   }
 
-  ~CpuComputeNode() override = default;
+  ~cpuComputeNode() override = default;
 };
 
 } // namespace cpu

@@ -13,21 +13,20 @@ namespace modeldy {
 namespace cpu {
 
 template <typename T>
-class CpuGemmOO : public CpuComputeNode<T> {
+class cpuGemmOO : public cpuComputeNode<T> {
  public:
-  explicit CpuGemmOO(const NodePtr<T>& A,
-                     const NodePtr<T>& B,
-                     const NodePtr<T>& C = nullptr,
+  explicit cpuGemmOO(const std::vector<NodePtr<T>>& input,
+                     const std::vector<NodePtr<T>>& output,
+                     const std::string& name = "",
                      T alpha = static_cast<T>(1),
-                     T beta = static_cast<T>(1),
-                     const std::string& name = "")
-      : CpuComputeNode<T>({A, B}, {C}, name),
+                     T beta = static_cast<T>(0))
+      : cpuComputeNode<T>(input, output, name),
         alpha_(alpha),
         beta_(beta) {
     this->validate_shape();
   }
 
-  ~CpuGemmOO() override = default;
+  ~cpuGemmOO() override = default;
 
   /*! 
   * \brief validate the shape of the input and output
@@ -134,5 +133,10 @@ class CpuGemmOO : public CpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
+
+#include <modeldy/include/operator_registry.h>
+
+REGISTER_OPERATOR(float, GemmOO, cpu);
+REGISTER_OPERATOR(double, GemmOO, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_GEMM_OP_H_

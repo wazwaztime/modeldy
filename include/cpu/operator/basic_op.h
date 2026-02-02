@@ -14,11 +14,10 @@ namespace cpu {
 template <typename T>
 class CpuAdd : public CpuComputeNode<T> {
  public:
-  explicit CpuAdd(const NodePtr<T>& input1,
-                  const NodePtr<T>& input2,
-                  const NodePtr<T>& output,
-                  const std::string& name = "")
-      : CpuComputeNode<T>({input1, input2}, {output}, name) {
+  explicit CpuAdd(const std::vector<NodePtr<T>>& input,
+                   const std::vector<NodePtr<T>>& output,
+                   const std::string& name = "")
+      : CpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
@@ -82,11 +81,10 @@ namespace cpu {
 template <typename T>
 class CpuMul : public CpuComputeNode<T> {
  public:
-  explicit CpuMul(const NodePtr<T>& input1,
-                  const NodePtr<T>& input2,
-                  const NodePtr<T>& output,
-                  const std::string& name = "")
-      : CpuComputeNode<T>({input1, input2}, {output}, name) {
+  explicit CpuMul(const std::vector<NodePtr<T>>& input,
+                   const std::vector<NodePtr<T>>& output,
+                   const std::string& name = "")
+      : CpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
@@ -148,5 +146,12 @@ class CpuMul : public CpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
+
+#include <modeldy/include/operator_registry.h>
+
+REGISTER_OPERATOR(float, Add, cpu);
+REGISTER_OPERATOR(double, Add, cpu);
+REGISTER_OPERATOR(float, Mul, cpu);
+REGISTER_OPERATOR(double, Mul, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_BASIC_OP_H_

@@ -13,16 +13,16 @@ namespace modeldy {
 namespace cpu {
 
 template <typename T>
-class CpuReLU : public CpuComputeNode<T> {
+class cpuReLU : public cpuComputeNode<T> {
  public : 
-  explicit CpuReLU(const NodePtr<T>& input,
-                   const NodePtr<T>& output,
+  explicit cpuReLU(const std::vector<NodePtr<T>>& input,
+                   const std::vector<NodePtr<T>>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>({input}, {output}, name) {
+      : cpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
-  ~CpuReLU() override = default;
+  ~cpuReLU() override = default;
 
   /*! \brief validate the shape of the input and output*/
   void validate_shape() const override {
@@ -67,16 +67,16 @@ class CpuReLU : public CpuComputeNode<T> {
 namespace cpu {
 
 template <typename T>
-class CpuSigmoid : public CpuComputeNode<T> {
+class cpuSigmoid : public cpuComputeNode<T> {
  public :
-  explicit CpuSigmoid(const NodePtr<T>& input,
-                      const NodePtr<T>& output,
-                      const std::string& name = "")
-      : CpuComputeNode<T>({input}, {output}, name) {
+  explicit cpuSigmoid(const std::vector<NodePtr<T>>& input,
+                   const std::vector<NodePtr<T>>& output,
+                   const std::string& name = "")
+      : cpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
-  ~CpuSigmoid() override = default;
+  ~cpuSigmoid() override = default;
 
   /*! \brief validate the shape of the input and output */
   void validate_shape() const override {
@@ -122,16 +122,16 @@ class CpuSigmoid : public CpuComputeNode<T> {
 namespace cpu {
 
 template <typename T>
-class CpuTanh : public CpuComputeNode<T> {
+class cpuTanh : public cpuComputeNode<T> {
  public :
-  explicit CpuTanh(const NodePtr<T>& input,
-                   const NodePtr<T>& output,
+  explicit cpuTanh(const std::vector<NodePtr<T>>& input,
+                   const std::vector<NodePtr<T>>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>({input}, {output}, name) {
+      : cpuComputeNode<T>(input, output, name) {
     this->validate_shape();
   }
 
-  ~CpuTanh() override = default;
+  ~cpuTanh() override = default;
 
   /*! \brief validate the shape of the input and output */
   void validate_shape() const override {
@@ -175,5 +175,14 @@ class CpuTanh : public CpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
+
+#include <modeldy/include/operator_registry.h>
+
+REGISTER_OPERATOR(float, ReLU, cpu);
+REGISTER_OPERATOR(double, ReLU, cpu);
+REGISTER_OPERATOR(float, Sigmoid, cpu);
+REGISTER_OPERATOR(double, Sigmoid, cpu);
+REGISTER_OPERATOR(float, Tanh, cpu);
+REGISTER_OPERATOR(double, Tanh, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_ACTIVATION_OP_H_

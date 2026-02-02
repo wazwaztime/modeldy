@@ -12,9 +12,9 @@
 namespace modeldy {
 /*! \brief CUDA-specific node implementations */
 template <typename T>
-class CudaDataNode : public DataNode<T> {
+class cudaDataNode : public DataNode<T> {
  public:
-  explicit CudaDataNode(const std::vector<size_t>& shape,
+  explicit cudaDataNode(const std::vector<size_t>& shape,
                         bool requires_grad = false,
                         const std::string& name = "")
       : DataNode<T>(shape, requires_grad, name) {
@@ -34,7 +34,7 @@ class CudaDataNode : public DataNode<T> {
     }
   }
 
-  ~CudaDataNode() override = default;
+  ~cudaDataNode() override = default;
 
   /*! \brief get the underlying data pointer */
   T* data() {
@@ -63,25 +63,25 @@ class CudaDataNode : public DataNode<T> {
 namespace cuda {
 
 template <typename T>
-class CudaComputeNode : public ComputeNode<T> {
+class cudaComputeNode : public ComputeNode<T> {
  public:
-  explicit CudaComputeNode(const std::vector<NodePtr<T>>& inputs,
+  explicit cudaComputeNode(const std::vector<NodePtr<T>>& inputs,
                            const std::vector<NodePtr<T>>& outputs,
                            const std::string& name = "")
       : ComputeNode<T>(inputs, outputs, name) {
-    // Assert that all inputs are CudaDataNode
+    // Assert that all inputs are cudaDataNode
     for (const auto& input : inputs_) {
-      assert(std::dynamic_pointer_cast<CudaDataNode<T>>(input) != nullptr &&
-             "CudaComputeNode inputs must be CudaDataNode instances");
+      assert(std::dynamic_pointer_cast<cudaDataNode<T>>(input) != nullptr &&
+             "cudaComputeNode inputs must be cudaDataNode instances");
     }
-    // Assert that all outputs are CudaDataNode
+    // Assert that all outputs are cudaDataNode
     for (const auto& output : outputs_) {
-      assert(std::dynamic_pointer_cast<CudaDataNode<T>>(output) != nullptr &&
-             "CudaComputeNode outputs must be CudaDataNode instances");
+      assert(std::dynamic_pointer_cast<cudaDataNode<T>>(output) != nullptr &&
+             "cudaComputeNode outputs must be cudaDataNode instances");
     }
   }
   
-  ~CudaComputeNode() override = default;
+  ~cudaComputeNode() override = default;
 };
 
 } // namespace cuda
