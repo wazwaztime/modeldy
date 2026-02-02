@@ -6,6 +6,7 @@
 #define MODELDY_INCLUDE_CPU_NODE_CPU_H_
 
 #include <modeldy/include/node.h>
+#include <modeldy/include/memory_pool.h>
 
 #include <vector>
 #include <cassert>
@@ -21,14 +22,21 @@ class cpuDataNode : public DataNode<T> {
                        bool requires_grad = false,
                        const std::string& name = "")
       : DataNode<T>(shape, requires_grad, name) {
-    // Allocate CPU memory for data
+    // Calculate total size
     size_t total_size = 1;
     for (const auto& dim : shape) {
       total_size *= dim;
     }
-    data_.resize(total_size);
+    total_size_ = total_size;
+    
+    // Allocate CPU memory from pool
+    auto& pool = cpuMemoryPool<T>::getInstance();
+    T* data_ptr = pool.allocate(total_size);
+    data_ = std::unique_ptr<T[], PoolDeleter>(data_ptr, PoolDeleter(total_size));
+    
     if (requires_grad) {
-        grad_.resize(total_size);
+      T* grad_ptr = pool.allocate(total_size);
+      grad_ = std::unique_ptr<T[], PoolDeleter>(grad_ptr, PoolDeleter(total_size));
     }
   }
 
@@ -36,23 +44,36 @@ class cpuDataNode : public DataNode<T> {
 
   /*! \brief get the underlying data pointer */
   T* data() {
-    return data_.data();
+    return data_.get();
   }
 
   /*! \brief get the underlying gradient pointer */
   T* grad() {
     assert(this->requires_grad_ && "Gradient not allocated for this node");
-    return grad_.data();
+    return grad_.get();
   }
 
   void copy_from(const std::vector<T>& src) {
-    assert(src.size() == data_.size() && "Source size must match data size");
-    std::copy(src.begin(), src.end(), data_.begin());
+    assert(src.size() == total_size_ && "Source size must match data size");
+    std::copy(src.begin(), src.end(), data_.get());
   }
 
  private:
-  std::vector<T> data_;
-  std::vector<T> grad_;
+  /*! \brief Custom deleter that returns memory to pool */
+  struct PoolDeleter {
+    size_t size;
+    explicit PoolDeleter(size_t s = 0) : size(s) {}
+    
+    void operator()(T* ptr) {
+      if (ptr != nullptr && size > 0) {
+        cpuMemoryPool<T>::getInstance().deallocate(ptr, size);
+      }
+    }
+  };
+
+  std::unique_ptr<T[], PoolDeleter> data_;
+  std::unique_ptr<T[], PoolDeleter> grad_;
+  size_t total_size_;
 };
 
 template <typename T>

@@ -14,6 +14,10 @@
 
 namespace modeldy {
 
+// Forward declarations
+template <typename T>
+class MemoryPool;
+
 template <typename T>
 class Node;
 
@@ -104,6 +108,10 @@ class DataNode : public Node<T> {
 
  private:
   std::vector<size_t> shape_; 
+
+ protected:
+  std::shared_ptr<MemoryPool<T>> memory_pool_;
+
 };
 
 /*! \brief compute node class */

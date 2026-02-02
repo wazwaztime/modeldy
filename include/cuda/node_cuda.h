@@ -6,7 +6,7 @@
 #define MODELDY_INCLUDE_CUDA_NODE_CUDA_H_
 
 #include <modeldy/include/node.h>
-
+#include <modeldy/include/memory_pool.h>
 #include <modeldy/include/cuda/cuda_check.h>
 
 namespace modeldy {
@@ -18,19 +18,21 @@ class cudaDataNode : public DataNode<T> {
                         bool requires_grad = false,
                         const std::string& name = "")
       : DataNode<T>(shape, requires_grad, name) {
-    // Allocate CUDA memory for data
+    // Calculate total size
     size_t total_size = 1;
     for (const auto& dim : shape) {
       total_size *= dim;
     }
-    T* data_ptr = nullptr;
-    CUDA_CHECK(cudaMalloc(&data_ptr, total_size * sizeof(T)));
-    data_ = std::unique_ptr<T[], Deleter>(data_ptr);
+    total_size_ = total_size;
+    
+    // Allocate CUDA memory from pool
+    auto& pool = cuda::cudaMemoryPool<T>::getInstance();
+    T* data_ptr = pool.allocate(total_size);
+    data_ = std::unique_ptr<T[], PoolDeleter>(data_ptr, PoolDeleter(total_size));
 
     if (requires_grad) {
-      T* grad_ptr = nullptr;
-      CUDA_CHECK(cudaMalloc(&grad_ptr, total_size * sizeof(T)));
-      grad_ = std::unique_ptr<T[], Deleter>(grad_ptr);
+      T* grad_ptr = pool.allocate(total_size);
+      grad_ = std::unique_ptr<T[], PoolDeleter>(grad_ptr, PoolDeleter(total_size));
     }
   }
 
@@ -48,15 +50,21 @@ class cudaDataNode : public DataNode<T> {
   }
 
  private:
-  /*! \brief Custom deleter for CUDA memory */
-  struct Deleter {
+  /*! \brief Custom deleter that returns memory to pool */
+  struct PoolDeleter {
+    size_t size;
+    explicit PoolDeleter(size_t s = 0) : size(s) {}
+    
     void operator()(T* ptr) {
-      CUDA_CHECK(cudaFree(ptr));
+      if (ptr != nullptr && size > 0) {
+        cuda::cudaMemoryPool<T>::getInstance().deallocate(ptr, size);
+      }
     }
   };
 
-  std::unique_ptr<T[], Deleter> data_;
-  std::unique_ptr<T[], Deleter> grad_;
+  std::unique_ptr<T[], PoolDeleter> data_;
+  std::unique_ptr<T[], PoolDeleter> grad_;
+  size_t total_size_;
 
 };
 
