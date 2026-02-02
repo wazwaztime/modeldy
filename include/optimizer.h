@@ -10,10 +10,13 @@
 #include <string>
 #include <unordered_map>
 #include <cmath>
+#include <stdexcept>
+
+#include <include/node.h>
 
 #ifdef USE_CUDA
-#include <modeldy/include/cuda/cuda_check.h>
-#include <modeldy/include/cuda/optimizer_kernels.h>
+#include <include/cuda/cuda_check.h>
+#include <include/cuda/node_cuda.h>
 #endif
 
 namespace modeldy {

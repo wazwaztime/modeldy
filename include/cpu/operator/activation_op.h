@@ -5,8 +5,8 @@
 #ifndef MODELDY_INCLUDE_CPU_OPERATOR_ACTIVATION_OP_H_
 #define MODELDY_INCLUDE_CPU_OPERATOR_ACTIVATION_OP_H_
 
-#include <modeldy/include/cpu/node_cpu.h>
-#include <modeldy/include/cpu/cpu_math.h>
+#include <include/cpu/node_cpu.h>
+#include <include/cpu/cpu_math.h>
 
 #include <cassert>
 
@@ -181,14 +181,5 @@ class cpuTanh : public cpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
-
-#include <modeldy/include/operator_registry.h>
-
-REGISTER_OPERATOR(float, ReLU, cpu);
-REGISTER_OPERATOR(double, ReLU, cpu);
-REGISTER_OPERATOR(float, Sigmoid, cpu);
-REGISTER_OPERATOR(double, Sigmoid, cpu);
-REGISTER_OPERATOR(float, Tanh, cpu);
-REGISTER_OPERATOR(double, Tanh, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_ACTIVATION_OP_H_

@@ -5,9 +5,9 @@
 #ifndef MODELDY_INCLUDE_CUDA_NODE_CUDA_H_
 #define MODELDY_INCLUDE_CUDA_NODE_CUDA_H_
 
-#include <modeldy/include/node.h>
-#include <modeldy/include/memory_pool.h>
-#include <modeldy/include/cuda/cuda_check.h>
+#include <include/node.h>
+#include <include/memory_pool.h>
+#include <include/cuda/cuda_check.h>
 
 namespace modeldy {
 /*! \brief CUDA-specific node implementations */

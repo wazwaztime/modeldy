@@ -5,7 +5,7 @@
 #ifndef MODELDY_INCLUDE_CPU_OPERATOR_BASIC_OP_H_
 #define MODELDY_INCLUDE_CPU_OPERATOR_BASIC_OP_H_
 
-#include <modeldy/include/cpu/node_cpu.h>
+#include <include/cpu/node_cpu.h>
 #include <cassert>
 
 namespace modeldy {
@@ -157,12 +157,5 @@ class cpuMul : public cpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
-
-#include <modeldy/include/operator_registry.h>
-
-REGISTER_OPERATOR(float, Add, cpu);
-REGISTER_OPERATOR(double, Add, cpu);
-REGISTER_OPERATOR(float, Mul, cpu);
-REGISTER_OPERATOR(double, Mul, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_BASIC_OP_H_

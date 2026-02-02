@@ -5,8 +5,8 @@
 #ifndef MODELDY_INCLUDE_CPU_NODE_CPU_H_
 #define MODELDY_INCLUDE_CPU_NODE_CPU_H_
 
-#include <modeldy/include/node.h>
-#include <modeldy/include/memory_pool.h>
+#include <include/node.h>
+#include <include/memory_pool.h>
 
 #include <vector>
 #include <cassert>

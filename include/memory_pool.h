@@ -13,7 +13,7 @@
 #include <functional>
 
 #ifdef USE_CUDA
-#include <modeldy/include/cuda/cuda_check.h>
+#include <include/cuda/cuda_check.h>
 #endif
 
 namespace modeldy {

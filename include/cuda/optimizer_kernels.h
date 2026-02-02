@@ -9,7 +9,7 @@
 #ifdef USE_CUDA
 
 #include <cuda_runtime.h>
-#include <modeldy/include/cuda/cuda_check.h>
+#include <include/cuda/cuda_check.h>
 
 namespace modeldy {
 namespace cuda {
@@ -30,15 +30,14 @@ namespace cuda {
  */
 template <typename T>
 __global__ void sgd_kernel(T* data, const T* grad, size_t size, T lr, T weight_decay) {
-  // TODO: Implement SGD kernel
-  // int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  // if (idx < size) {
-  //   T g = grad[idx];
-  //   if (weight_decay > 0) {
-  //     g += weight_decay * data[idx];
-  //   }
-  //   data[idx] -= lr * g;
-  // }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    T g = grad[idx];
+    if (weight_decay > static_cast<T>(0)) {
+      g += weight_decay * data[idx];
+    }
+    data[idx] -= lr * g;
+  }
 }
 
 /*!
@@ -58,16 +57,15 @@ __global__ void sgd_kernel(T* data, const T* grad, size_t size, T lr, T weight_d
 template <typename T>
 __global__ void sgd_momentum_kernel(T* data, const T* grad, T* velocity,
                                    size_t size, T lr, T momentum, T weight_decay) {
-  // TODO: Implement SGD with momentum kernel
-  // int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  // if (idx < size) {
-  //   T g = grad[idx];
-  //   if (weight_decay > 0) {
-  //     g += weight_decay * data[idx];
-  //   }
-  //   velocity[idx] = momentum * velocity[idx] + g;
-  //   data[idx] -= lr * velocity[idx];
-  // }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    T g = grad[idx];
+    if (weight_decay > 0) {
+      g += weight_decay * data[idx];
+    }
+    velocity[idx] = momentum * velocity[idx] + g;
+    data[idx] -= lr * velocity[idx];
+  }
 }
 
 // ============================================================================
@@ -100,22 +98,21 @@ template <typename T>
 __global__ void adam_kernel(T* data, const T* grad, T* m, T* v,
                            size_t size, T lr, T beta1, T beta2,
                            T epsilon, T weight_decay, size_t t) {
-  // TODO: Implement Adam kernel
-  // int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  // if (idx < size) {
-  //   T g = grad[idx];
-  //   if (weight_decay > 0) {
-  //     g += weight_decay * data[idx];
-  //   }
-  //   
-  //   m[idx] = beta1 * m[idx] + (1 - beta1) * g;
-  //   v[idx] = beta2 * v[idx] + (1 - beta2) * g * g;
-  //   
-  //   T m_hat = m[idx] / (1 - pow(beta1, t));
-  //   T v_hat = v[idx] / (1 - pow(beta2, t));
-  //   
-  //   data[idx] -= lr * m_hat / (sqrt(v_hat) + epsilon);
-  // }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    T g = grad[idx];
+    if (weight_decay > 0) {
+      g += weight_decay * data[idx];
+    }
+    
+    m[idx] = beta1 * m[idx] + (static_cast<T>(1) - beta1) * g;
+    v[idx] = beta2 * v[idx] + (static_cast<T>(1) - beta2) * g * g;
+    
+    T m_hat = m[idx] / (static_cast<T>(1) - pow(beta1, static_cast<T>(t)));
+    T v_hat = v[idx] / (static_cast<T>(1) - pow(beta2, static_cast<T>(t)));
+    
+    data[idx] -= lr * m_hat / (sqrt(v_hat) + epsilon);
+  }
 }
 
 // ============================================================================
@@ -142,67 +139,39 @@ template <typename T>
 __global__ void rmsprop_kernel(T* data, const T* grad, T* square_avg,
                               size_t size, T lr, T alpha,
                               T epsilon, T weight_decay) {
-  // TODO: Implement RMSprop kernel
-  // int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  // if (idx < size) {
-  //   T g = grad[idx];
-  //   if (weight_decay > 0) {
-  //     g += weight_decay * data[idx];
-  //   }
-  //   
-  //   square_avg[idx] = alpha * square_avg[idx] + (1 - alpha) * g * g;
-  //   data[idx] -= lr * g / (sqrt(square_avg[idx]) + epsilon);
-  // }
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < size) {
+    T g = grad[idx];
+    if (weight_decay > 0) {
+      g += weight_decay * data[idx];
+    }
+    
+    square_avg[idx] = alpha * square_avg[idx] + (static_cast<T>(1) - alpha) * g * g;
+    data[idx] -= lr * g / (sqrt(square_avg[idx]) + epsilon);
+  }
 }
 
 // ============================================================================
-// Kernel Launch Functions (Template Specializations)
+// Kernel Launch Functions (Forward Declarations)
 // ============================================================================
 
 // SGD kernel launchers
 template <typename T>
-void sgd_kernel_launch(T* data, const T* grad, size_t size, T lr, T weight_decay) {
-  // TODO: Implement kernel launch
-  // int block_size = 256;
-  // int grid_size = (size + block_size - 1) / block_size;
-  // sgd_kernel<<<grid_size, block_size>>>(data, grad, size, lr, weight_decay);
-  // CUDA_CHECK(cudaGetLastError());
-}
+void sgd_kernel_launch(T* data, const T* grad, size_t size, T lr, T weight_decay);
 
 template <typename T>
 void sgd_momentum_kernel_launch(T* data, const T* grad, T* velocity,
-                               size_t size, T lr, T momentum, T weight_decay) {
-  // TODO: Implement kernel launch
-  // int block_size = 256;
-  // int grid_size = (size + block_size - 1) / block_size;
-  // sgd_momentum_kernel<<<grid_size, block_size>>>(
-  //     data, grad, velocity, size, lr, momentum, weight_decay);
-  // CUDA_CHECK(cudaGetLastError());
-}
+                               size_t size, T lr, T momentum, T weight_decay);
 
 // Adam kernel launcher
 template <typename T>
 void adam_kernel_launch(T* data, const T* grad, T* m, T* v, size_t size,
-                       T lr, T beta1, T beta2, T epsilon, T weight_decay, size_t t) {
-  // TODO: Implement kernel launch
-  // int block_size = 256;
-  // int grid_size = (size + block_size - 1) / block_size;
-  // adam_kernel<<<grid_size, block_size>>>(
-  //     data, grad, m, v, size, lr, beta1, beta2, epsilon, weight_decay, t);
-  // CUDA_CHECK(cudaGetLastError());
-}
+                       T lr, T beta1, T beta2, T epsilon, T weight_decay, size_t t);
 
 // RMSprop kernel launcher
 template <typename T>
 void rmsprop_kernel_launch(T* data, const T* grad, T* square_avg, size_t size,
-                          T lr, T alpha, T epsilon, T weight_decay) {
-  // TODO: Implement kernel launch
-  // int block_size = 256;
-  // int grid_size = (size + block_size - 1) / block_size;
-  // rmsprop_kernel<<<grid_size, block_size>>>(
-  //     data, grad, square_avg, size, lr, alpha, epsilon, weight_decay);
-  // CUDA_CHECK(cudaGetLastError());
-}
+                          T lr, T alpha, T epsilon, T weight_decay);
 
 } // namespace cuda
 } // namespace modeldy

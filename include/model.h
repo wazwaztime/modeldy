@@ -11,11 +11,13 @@
 #include <queue>
 #include <iostream>
 
-#include <modeldy/include/operator_registry.h>
-#include <modeldy/include/optimizer.h>
-#include <modeldy/include/cpu/operator.h>
+#include <include/operator_registry.h>
+#include <include/optimizer.h>
+#include <include/cpu/operator.h>
+#include <include/cpu/node_cpu.h>
 #ifdef USE_CUDA
-#include <modeldy/include/cuda/operator.h>
+#include <include/cuda/operator.h>
+#include <include/cuda/node_cuda.h>
 #endif // USE_CUDA
 
 namespace modeldy {
@@ -41,7 +43,7 @@ class Model {
     }
 #ifdef USE_CUDA
     else if (device == "cuda") {
-      node = std::make_shared<cuda::cudaDataNode<T>>(shape, requires_grad, name);
+      node = std::make_shared<cudaDataNode<T>>(shape, requires_grad, name);
     }
 #endif // USE_CUDA
     else {
@@ -108,6 +110,41 @@ class Model {
     return std::dynamic_pointer_cast<DataNode<T>>(it->second)->data();
   }
 
+  /*! \brief get data as vector */
+  std::vector<T> getData(const std::string& name) const {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second);
+    if (!data_node) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    
+    size_t total_size = 1;
+    for (const auto& dim : data_node->shape()) {
+      total_size *= dim;
+    }
+    
+    std::vector<T> result(total_size);
+    const T* data_ptr = data_node->data();
+    
+    // Handle both CPU and CUDA nodes
+    if (auto cpu_node = std::dynamic_pointer_cast<cpu::cpuDataNode<T>>(data_node)) {
+      std::copy(data_ptr, data_ptr + total_size, result.begin());
+    }
+#ifdef USE_CUDA
+    else if (auto cuda_node = std::dynamic_pointer_cast<cudaDataNode<T>>(data_node)) {
+      CUDA_CHECK(cudaMemcpy(result.data(), data_ptr, total_size * sizeof(T), cudaMemcpyDeviceToHost));
+    }
+#endif
+    else {
+      throw std::runtime_error("Unsupported device type for node " + name);
+    }
+    
+    return result;
+  }
+
   /*! \brief get gradient pointer of a data node by name */
   const T *grad(const std::string& name) const {
     auto it = node_map_.find(name);
@@ -121,6 +158,69 @@ class Model {
       throw std::runtime_error("Node with name " + name + " does not require gradient.");
     }
     return std::dynamic_pointer_cast<DataNode<T>>(it->second)->grad();
+  }
+
+  /*! \brief get gradient as vector */
+  std::vector<T> getGrad(const std::string& name) const {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second);
+    if (!data_node) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    if (!data_node->requires_grad()) {
+      throw std::runtime_error("Node with name " + name + " does not require gradient.");
+    }
+    
+    size_t total_size = 1;
+    for (const auto& dim : data_node->shape()) {
+      total_size *= dim;
+    }
+    
+    std::vector<T> result(total_size);
+    const T* grad_ptr = data_node->grad();
+    
+    // Handle both CPU and CUDA nodes
+    if (auto cpu_node = std::dynamic_pointer_cast<cpu::cpuDataNode<T>>(data_node)) {
+      std::copy(grad_ptr, grad_ptr + total_size, result.begin());
+    }
+#ifdef USE_CUDA
+    else if (auto cuda_node = std::dynamic_pointer_cast<cudaDataNode<T>>(data_node)) {
+      CUDA_CHECK(cudaMemcpy(result.data(), grad_ptr, total_size * sizeof(T), cudaMemcpyDeviceToHost));
+    }
+#endif
+    else {
+      throw std::runtime_error("Unsupported device type for node " + name);
+    }
+    
+    return result;
+  }
+
+  /*! \brief initialize gradient for a node */
+  void initGrad(const std::string& name, T value) {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second);
+    if (!data_node) {
+      throw std::runtime_error("Node with name " + name + " is not a DataNode.");
+    }
+    if (!data_node->requires_grad()) {
+      throw std::runtime_error("Node with name " + name + " does not require gradient.");
+    }
+    
+    size_t total_size = 1;
+    for (const auto& dim : data_node->shape()) {
+      total_size *= dim;
+    }
+    
+    T* grad_ptr = data_node->grad();
+    for (size_t i = 0; i < total_size; ++i) {
+      grad_ptr[i] = value;
+    }
   }
 
   /*! \brief set data of a data node by name */
@@ -144,7 +244,7 @@ class Model {
       cpu_node->copy_from(data);
     }
 #ifdef USE_CUDA
-    else if (auto cuda_node = std::dynamic_pointer_cast<cuda::cudaDataNode<T>>(data_node)) {
+    else if (auto cuda_node = std::dynamic_pointer_cast<cudaDataNode<T>>(data_node)) {
       cuda_node->copy_from(data);
     }
 #endif // USE_CUDA

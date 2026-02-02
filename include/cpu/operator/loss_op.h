@@ -5,8 +5,8 @@
 #ifndef MODELDY_INCLUDE_CPU_OPERATOR_LOSS_OP_H_
 #define MODELDY_INCLUDE_CPU_OPERATOR_LOSS_OP_H_
 
-#include <modeldy/include/cpu/node_cpu.h>
-#include <modeldy/include/cpu/cpu_math.h>
+#include <include/cpu/node_cpu.h>
+#include <include/cpu/cpu_math.h>
 
 #include <cassert>
 #include <cmath>
@@ -365,14 +365,5 @@ class cpuCrossEntropyLoss : public cpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
-
-#include <modeldy/include/operator_registry.h>
-
-REGISTER_OPERATOR(float, MSELoss, cpu);
-REGISTER_OPERATOR(double, MSELoss, cpu);
-REGISTER_OPERATOR(float, BCELoss, cpu);
-REGISTER_OPERATOR(double, BCELoss, cpu);
-REGISTER_OPERATOR(float, CrossEntropyLoss, cpu);
-REGISTER_OPERATOR(double, CrossEntropyLoss, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_LOSS_OP_H_

@@ -5,9 +5,9 @@
 #ifndef MODELDY_INCLUDE_CPU_OPERATOR_H_
 #define MODELDY_INCLUDE_CPU_OPERATOR_H_
 
-#include <modeldy/include/cpu/operator/activation_op.h>
-#include <modeldy/include/cpu/operator/basic_op.h>
-#include <modeldy/include/cpu/operator/gemm_op.h>
-#include <modeldy/include/cpu/operator/loss_op.h>
+#include <include/cpu/operator/activation_op.h>
+#include <include/cpu/operator/basic_op.h>
+#include <include/cpu/operator/gemm_op.h>
+#include <include/cpu/operator/loss_op.h>
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_H_

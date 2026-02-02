@@ -6,7 +6,7 @@
 #ifndef MODELDY_INCLUDE_CPU_OPERATOR_GEMM_OP_H_
 #define MODELDY_INCLUDE_CPU_OPERATOR_GEMM_OP_H_
 
-#include <modeldy/include/cpu/node_cpu.h>
+#include <include/cpu/node_cpu.h>
 #include <cassert>
 
 namespace modeldy {
@@ -142,10 +142,5 @@ class cpuGemmOO : public cpuComputeNode<T> {
 } // namespace cpu
 
 } // namespace modeldy
-
-#include <modeldy/include/operator_registry.h>
-
-REGISTER_OPERATOR(float, GemmOO, cpu);
-REGISTER_OPERATOR(double, GemmOO, cpu);
 
 #endif // MODELDY_INCLUDE_CPU_OPERATOR_GEMM_OP_H_
