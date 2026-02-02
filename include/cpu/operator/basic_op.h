@@ -14,10 +14,11 @@ namespace cpu {
 template <typename T>
 class CpuAdd : public CpuComputeNode<T> {
  public:
-  explicit CpuAdd(const std::vector<NodePtr<T>>& inputs,
-                      const std::vector<NodePtr<T>>& outputs,
-                      const std::string& name = "")
-      : CpuComputeNode<T>(inputs, outputs, name) {
+  explicit CpuAdd(const NodePtr<T>& input1,
+                  const NodePtr<T>& input2,
+                  const NodePtr<T>& output,
+                  const std::string& name = "")
+      : CpuComputeNode<T>({input1, input2}, {output}, name) {
     this->validate_shape();
   }
 
@@ -81,10 +82,11 @@ namespace cpu {
 template <typename T>
 class CpuMul : public CpuComputeNode<T> {
  public:
-  explicit CpuMul(const std::vector<NodePtr<T>>& inputs,
-                      const std::vector<NodePtr<T>>& outputs,
-                      const std::string& name = "")
-      : CpuComputeNode<T>(inputs, outputs, name) {
+  explicit CpuMul(const NodePtr<T>& input1,
+                  const NodePtr<T>& input2,
+                  const NodePtr<T>& output,
+                  const std::string& name = "")
+      : CpuComputeNode<T>({input1, input2}, {output}, name) {
     this->validate_shape();
   }
 

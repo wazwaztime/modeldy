@@ -15,10 +15,10 @@ namespace cpu {
 template <typename T>
 class CpuReLU : public CpuComputeNode<T> {
  public : 
-  explicit CpuReLU(const std::vector<NodePtr<T>>& inputs,
-                   const std::vector<NodePtr<T>>& outputs,
+  explicit CpuReLU(const NodePtr<T>& input,
+                   const NodePtr<T>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>(inputs, outputs, name) {
+      : CpuComputeNode<T>({input}, {output}, name) {
     this->validate_shape();
   }
 
@@ -69,10 +69,10 @@ namespace cpu {
 template <typename T>
 class CpuSigmoid : public CpuComputeNode<T> {
  public :
-  explicit CpuSigmoid(const std::vector<NodePtr<T>>& inputs,
-                      const std::vector<NodePtr<T>>& outputs,
+  explicit CpuSigmoid(const NodePtr<T>& input,
+                      const NodePtr<T>& output,
                       const std::string& name = "")
-      : CpuComputeNode<T>(inputs, outputs, name) {
+      : CpuComputeNode<T>({input}, {output}, name) {
     this->validate_shape();
   }
 
@@ -124,10 +124,10 @@ namespace cpu {
 template <typename T>
 class CpuTanh : public CpuComputeNode<T> {
  public :
-  explicit CpuTanh(const std::vector<NodePtr<T>>& inputs,
-                   const std::vector<NodePtr<T>>& outputs,
+  explicit CpuTanh(const NodePtr<T>& input,
+                   const NodePtr<T>& output,
                    const std::string& name = "")
-      : CpuComputeNode<T>(inputs, outputs, name) {
+      : CpuComputeNode<T>({input}, {output}, name) {
     this->validate_shape();
   }
 
