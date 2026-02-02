@@ -49,6 +49,14 @@ class cudaDataNode : public DataNode<T> {
     return grad_.get();
   }
 
+  /*! \brief copy data from host to device */
+  void copy_from(const std::vector<T>& host_data) {
+    assert(host_data.size() == total_size_ && "Data size does not match node shape");
+    CUDA_CHECK(cudaMemcpy(data_.get(), host_data.data(), 
+                          total_size_ * sizeof(T), 
+                          cudaMemcpyHostToDevice));
+  }
+
  private:
   /*! \brief Custom deleter that returns memory to pool */
   struct PoolDeleter {

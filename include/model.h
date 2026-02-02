@@ -9,8 +9,10 @@
 #include <unordered_map>
 #include <memory>
 #include <queue>
+#include <iostream>
 
 #include <modeldy/include/operator_registry.h>
+#include <modeldy/include/optimizer.h>
 #include <modeldy/include/cpu/operator.h>
 #ifdef USE_CUDA
 #include <modeldy/include/cuda/operator.h>
@@ -268,10 +270,118 @@ class Model {
     }
   }
 
+  /*!
+   * \brief Mark a data node as a trainable parameter
+   * \param name Name of the parameter node
+   */
+  void add_parameter(const std::string& name) {
+    auto it = node_map_.find(name);
+    if (it == node_map_.end()) {
+      throw std::runtime_error("Node with name " + name + " not found.");
+    }
+    auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second);
+    if (!data_node) {
+      throw std::runtime_error("Node " + name + " is not a DataNode.");
+    }
+    if (!data_node->requires_grad()) {
+      throw std::runtime_error("Parameter node " + name + " must have requires_grad=true.");
+    }
+    parameter_names_.push_back(name);
+  }
+
+  /*!
+   * \brief Get all trainable parameters
+   */
+  std::vector<std::shared_ptr<DataNode<T>>> get_parameters() {
+    std::vector<std::shared_ptr<DataNode<T>>> params;
+    for (const auto& name : parameter_names_) {
+      auto it = node_map_.find(name);
+      if (it != node_map_.end()) {
+        if (auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second)) {
+          params.push_back(data_node);
+        }
+      }
+    }
+    return params;
+  }
+
+  /*!
+   * \brief Train the model for one epoch
+   * \param optimizer The optimizer to use for parameter updates
+   * \param loss_node_name Name of the loss node
+   * \param verbose Whether to print training progress
+   * \return The loss value
+   */
+  T train_step(Optimizer<T>& optimizer, const std::string& loss_node_name, bool verbose = false) {
+    // Forward pass
+    predict();
+    
+    // Get loss value
+    const T* loss_data = data(loss_node_name);
+    T loss_value = loss_data[0];
+    
+    if (verbose) {
+      std::cout << "Loss: " << loss_value << std::endl;
+    }
+    
+    // Backward pass
+    optimizer.zero_grad();
+    backward(loss_node_name, static_cast<T>(1));
+    
+    // Update parameters
+    optimizer.step();
+    
+    return loss_value;
+  }
+
+  /*!
+   * \brief Train the model for multiple iterations
+   * \param optimizer The optimizer to use
+   * \param loss_node_name Name of the loss node
+   * \param num_iterations Number of training iterations
+   * \param print_every Print loss every N iterations (0 = no printing)
+   * \return Vector of loss values for each iteration
+   */
+  std::vector<T> train(Optimizer<T>& optimizer,
+                       const std::string& loss_node_name,
+                       size_t num_iterations,
+                       size_t print_every = 0) {
+    std::vector<T> losses;
+    losses.reserve(num_iterations);
+    
+    for (size_t iter = 0; iter < num_iterations; ++iter) {
+      T loss = train_step(optimizer, loss_node_name, false);
+      losses.push_back(loss);
+      
+      if (print_every > 0 && (iter + 1) % print_every == 0) {
+        std::cout << "Iteration " << (iter + 1) << "/" << num_iterations 
+                  << ", Loss: " << loss << std::endl;
+      }
+    }
+    
+    return losses;
+  }
+
+  /*!
+   * \brief Setup optimizer with model parameters
+   * \param optimizer The optimizer to setup
+   */
+  void setup_optimizer(Optimizer<T>& optimizer) {
+    for (const auto& name : parameter_names_) {
+      auto it = node_map_.find(name);
+      if (it != node_map_.end()) {
+        if (auto data_node = std::dynamic_pointer_cast<DataNode<T>>(it->second)) {
+          optimizer.add_parameter(data_node, name);
+        }
+      }
+    }
+  }
+
  private:
   std::vector<std::shared_ptr<Node<T>>> nodes_;
   std::unordered_map<std::string, std::shared_ptr<Node<T>>> node_map_;
   std::vector<std::shared_ptr<ComputeNode<T>>> compute_nodes_;
+  std::vector<std::string> parameter_names_;
   bool compiled_ = false;
 
   /*! \brief topological sort of compute nodes */
