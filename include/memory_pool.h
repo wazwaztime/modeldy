@@ -60,7 +60,7 @@ class cpuMemoryPool : public MemoryPool<T> {
     
     // Allocate new memory
     T* raw_ptr = new T[size]();
-    allocated_blocks_[ptr] = size;  // Track allocation
+    allocated_blocks_[raw_ptr] = size;  // Track allocation
     total_allocated_memory_ += size * sizeof(T);
     return raw_ptr;
   }
